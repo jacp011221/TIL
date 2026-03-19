@@ -37,10 +37,29 @@ headers = {
     "Notion-Version": "2022-06-28"
 }
 
-def get_page_blocks(page_id):
-    url = f"https://api.notion.com/v1/blocks/{page_id}/children"
-    response = requests.get(url, headers=headers)
-    return response.json().get('results', [])
+def get_page_blocks(block_id):
+    all_blocks = []
+    next_cursor = None
+
+    while True:
+        url = f"https://api.notion.com/v1/blocks/{block_id}/children"
+        params = {}
+
+        if next_cursor:
+            params["start_cursor"] = next_cursor
+
+        response = requests.get(url, headers=headers, params=params)
+        data = response.json()
+
+        results = data.get("results", [])
+        all_blocks.extend(results)
+
+        if not data.get("has_more"):
+            break
+
+        next_cursor = data.get("next_cursor")
+
+    return all_blocks
 
 def extract_text_from_rich_text(rich_text_list):
     content = ""
